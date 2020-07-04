@@ -21,7 +21,7 @@ apiRouter.post('/minions', (req, res, next) => {
 });
 
 apiRouter.get('/minions/:id', (req, res, next) => {
-    // Is this okay for invalid id??
+    // Could need to refactor this as getFromDatabaseById() is returning 'undefined' rather than -1 for an invalid id.
     let minion = getFromDatabaseById('minions', req.params.id.toString());
     console.log(minion);
     if (minion) {

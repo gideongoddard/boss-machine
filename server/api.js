@@ -4,49 +4,58 @@ const apiRouter = express.Router();
 const { createMeeting, getAllFromDatabase, getFromDatabaseById, addToDatabase, updateInstanceInDatabase, deleteFromDatabasebyId, deleteAllFromDatabase } = require('./db');
 
 // Minions routes
+
+apiRouter.use('/minions/:id', (req, res, next) => {
+        // Could need to refactor this as getFromDatabaseById() is returning 'undefined' rather than -1 for an invalid id.
+    let minion = getFromDatabaseById('minions', req.params.id.toString());
+    if (!minion) {
+        res.status(404).send('Invalid id');
+    }
+    req.minion = minion;
+    next();
+});
+
+apiRouter.use(['/minions', '/minions/:id'], (req, res, next) => {
+    if (req.method === 'POST' || req.method === 'PUT') {
+        if (typeof req.body.name !== 'string' || typeof req.body.title !== 'string' || typeof req.body.weaknesses !== 'string') {
+            res.status(400).send('Please provide values for the name, title and weaknesses of the minion - all as strings');
+        }
+    }
+    next();
+});
+
 apiRouter.get('/minions', (req, res, next) => {
     let minions = getAllFromDatabase('minions');
     res.send(minions);
 });
 
 apiRouter.post('/minions', (req, res, next) => {
-    if (typeof req.body.name !== 'string' || typeof req.body.title !== 'string' || typeof req.body.weaknesses !== 'string') {
-        res.status(400).send('Please provide values for the name, title and weaknesses of the minion - all as strings');
-    } else {
-        req.body.salary = Number(req.body.salary);
-        const newMinion = req.body;
-        addToDatabase('minions', newMinion);
-        res.send(newMinion);
-    }
+    req.body.salary = Number(req.body.salary);
+    const newMinion = req.body;
+    addToDatabase('minions', newMinion);
+    res.send(newMinion);
 });
 
 apiRouter.get('/minions/:id', (req, res, next) => {
-    // Could need to refactor this as getFromDatabaseById() is returning 'undefined' rather than -1 for an invalid id.
-    let minion = getFromDatabaseById('minions', req.params.id.toString());
-    if (!minion) {
-        res.status(404).send('Invalid id');
-    } else {
-        res.send(minion);
-    }
+    res.send(req.minion);
 });
 
 apiRouter.put('/minions/:id', (req, res, next) => {
-    let minionCheck = getFromDatabaseById('minions', req.params.id.toString());
-    if (!minionCheck) {
-        res.status(404).send('Invalid id');
-    } else if (req.params.id.toString() !== req.body.id) {
+    if (req.params.id.toString() !== req.body.id.toString()) {
         res.status(400).send('The id of this minion cannot be changed.');
-    } else if (typeof req.body.name !== 'string' || typeof req.body.title !== 'string' || typeof req.body.weaknesses !== 'string') {
-        res.status(400).send('Please provide values for the name, title and weaknesses of the minion - all as strings');
     } else {
         let minion = updateInstanceInDatabase('minions', req.body);
-        console.log(minion);
-        res.status(200).send(minion);
+        if (!minion) {
+            res.status(400).send('Bad request');
+        } else {
+            res.status(200).send(minion);
+        }
     }
 });
 
 apiRouter.delete('/minions/:id', (req, res, next) => {
-
+    let minion = deleteFromDatabasebyId('minions', req.params.id.toString());
+    res.status(204).send();
 });
 
 // Ideas routes

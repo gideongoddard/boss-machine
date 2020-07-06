@@ -4,7 +4,6 @@ const apiRouter = express.Router();
 const { createMeeting, getAllFromDatabase, getFromDatabaseById, addToDatabase, updateInstanceInDatabase, deleteFromDatabasebyId, deleteAllFromDatabase } = require('./db');
 
 // Minions routes
-
 apiRouter.use('/minions/:id', (req, res, next) => {
         // Could need to refactor this as getFromDatabaseById() is returning 'undefined' rather than -1 for an invalid id.
     let minion = getFromDatabaseById('minions', req.params.id.toString());
@@ -33,7 +32,7 @@ apiRouter.post('/minions', (req, res, next) => {
     req.body.salary = Number(req.body.salary);
     const newMinion = req.body;
     addToDatabase('minions', newMinion);
-    res.send(newMinion);
+    res.status(201).send(newMinion);
 });
 
 apiRouter.get('/minions/:id', (req, res, next) => {
@@ -59,9 +58,26 @@ apiRouter.delete('/minions/:id', (req, res, next) => {
 });
 
 // Ideas routes
+apiRouter.use('ideas', (req, res, next) => {
+    if (req.method === 'POST' || req.method === 'PUT') {
+        if (typeof req.body.name !== 'string' || typeof req.body.description !== 'string') {
+            res.status(400).send('Please provide values for the name and description of the idea - both as strings');
+        }
+    }
+    next();
+});
+
 apiRouter.get('/ideas', (req, res, next) => {
     let ideas = getAllFromDatabase('ideas');
     res.send(ideas);
+});
+
+apiRouter.post('/ideas', (req, res, next) => {
+    const newIdea = req.body;
+    newIdea.weeklyRevenue = Number(newIdea.weeklyRevenue);
+    newIdea.numWeeks = Number(newIdea.numWeeks);
+    addToDatabase('ideas', newIdea);
+    res.status(201).send(newIdea);
 });
 
 // Meetings routes

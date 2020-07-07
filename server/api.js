@@ -9,9 +9,10 @@ apiRouter.use('/minions/:id', (req, res, next) => {
     let minion = getFromDatabaseById('minions', req.params.id.toString());
     if (!minion) {
         res.status(404).send('Invalid id');
+    } else {
+        req.minion = minion;
+        next();
     }
-    req.minion = minion;
-    next();
 });
 
 apiRouter.use(['/minions', '/minions/:id'], (req, res, next) => {
@@ -58,13 +59,24 @@ apiRouter.delete('/minions/:id', (req, res, next) => {
 });
 
 // Ideas routes
-apiRouter.use('ideas', (req, res, next) => {
+apiRouter.use(['ideas', '/ideas/:id'], (req, res, next) => {
     if (req.method === 'POST' || req.method === 'PUT') {
         if (typeof req.body.name !== 'string' || typeof req.body.description !== 'string') {
             res.status(400).send('Please provide values for the name and description of the idea - both as strings');
         }
     }
     next();
+});
+
+apiRouter.use('/ideas/:id', (req, res, next) => {
+    // Could need to refactor this as getFromDatabaseById() is returning 'undefined' rather than -1 for an invalid id.
+    let idea = getFromDatabaseById('ideas', req.params.id.toString());
+    if (!idea) {
+        res.status(404).send('Invalid id');
+    } else {
+        req.idea = idea;
+        next();
+    }
 });
 
 apiRouter.get('/ideas', (req, res, next) => {
@@ -78,6 +90,28 @@ apiRouter.post('/ideas', (req, res, next) => {
     newIdea.numWeeks = Number(newIdea.numWeeks);
     addToDatabase('ideas', newIdea);
     res.status(201).send(newIdea);
+});
+
+apiRouter.get('/ideas/:id', (req, res, next) => {
+    res.send(req.idea);
+});
+
+apiRouter.put('/ideas/:id', (req, res, next) => {
+    if (req.params.id.toString() !== req.body.id.toString()) {
+        res.status(400).send('The id of this minion cannot be changed.');
+    } else {
+        let idea = updateInstanceInDatabase('ideas', req.body);
+        if (!idea) {
+            res.status(400).send('Bad request');
+        } else {
+            res.status(200).send(idea);
+        }
+    }
+});
+
+apiRouter.delete('/ideas/:id', (req, res, next) => {
+    deleteFromDatabasebyId('ideas', req.params.id.toString());
+    res.status(204).send();
 });
 
 // Meetings routes

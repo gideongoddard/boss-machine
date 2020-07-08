@@ -120,4 +120,19 @@ apiRouter.get('/meetings', (req, res, next) => {
     res.send(meetings);
 });
 
+apiRouter.post('/meetings', (req, res, next) => {
+    let meeting = createMeeting();
+    if (!meeting) {
+        res.status(500).send('Your meeting could not be created');
+    } else {
+        addToDatabase('meetings', meeting);
+        res.status(201).send(meeting);
+    }
+});
+
+apiRouter.delete('/meetings', (req, res, next) => {
+    deleteAllFromDatabase('meetings');
+    res.status(204).send('All meetings cancelled');
+});
+
 module.exports = apiRouter;

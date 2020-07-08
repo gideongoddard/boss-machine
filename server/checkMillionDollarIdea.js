@@ -1,10 +1,11 @@
 const { useDebugValue } = require("react");
+const e = require("express");
 
-const checkMillionDollarIdea = (idea) => {
-    if (idea.numWeeks * idea.weeklyRevenue >= 1000000) {
-        return true;
+const checkMillionDollarIdea = (req, res, next) => {
+    if (req.body.numWeeks * req.body.weeklyRevenue >= 1000000) {
+        next();
     } else {
-        return false;
+        res.status(400).send('This idea is not a million dollar idea');
     }
 };
 

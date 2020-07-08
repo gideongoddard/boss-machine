@@ -2,6 +2,7 @@ const express = require('express');
 const apiRouter = express.Router();
 
 const { createMeeting, getAllFromDatabase, getFromDatabaseById, addToDatabase, updateInstanceInDatabase, deleteFromDatabasebyId, deleteAllFromDatabase } = require('./db');
+const checkMillionDollarIdea = require('./checkMillionDollarIdea');
 
 // Minions routes
 apiRouter.use('/minions/:id', (req, res, next) => {
@@ -17,7 +18,11 @@ apiRouter.use('/minions/:id', (req, res, next) => {
 
 apiRouter.use(['/minions', '/minions/:id'], (req, res, next) => {
     if (req.method === 'POST' || req.method === 'PUT') {
-        if (typeof req.body.name !== 'string' || typeof req.body.title !== 'string' || typeof req.body.weaknesses !== 'string') {
+        if (req.method === 'PUT' && !req.body.id) {
+            res.status(400).send('Please provide the id for the minion');
+        } else if (!req.body.salary) {
+            res.status(400).send('Please provide a value for the salary of the minion');
+        } else if (typeof req.body.name !== 'string' || typeof req.body.title !== 'string' || typeof req.body.weaknesses !== 'string') {
             res.status(400).send('Please provide values for the name, title and weaknesses of the minion - all as strings');
         }
     }
@@ -61,7 +66,11 @@ apiRouter.delete('/minions/:id', (req, res, next) => {
 // Ideas routes
 apiRouter.use(['ideas', '/ideas/:id'], (req, res, next) => {
     if (req.method === 'POST' || req.method === 'PUT') {
-        if (typeof req.body.name !== 'string' || typeof req.body.description !== 'string') {
+        if (req.method === 'PUT' && !req.body.id) {
+            res.status(400).send('Please provide the id for the idea');
+        } else if (!req.body.weeklyRevenue || !req.body.numWeeks) {
+            res.status(400).send('Please provide values for the weeklyRevenue and numWeeks of the idea - both as numbers')
+        } else if (typeof req.body.name !== 'string' || typeof req.body.description !== 'string') {
             res.status(400).send('Please provide values for the name and description of the idea - both as strings');
         }
     }
@@ -88,8 +97,12 @@ apiRouter.post('/ideas', (req, res, next) => {
     const newIdea = req.body;
     newIdea.weeklyRevenue = Number(newIdea.weeklyRevenue);
     newIdea.numWeeks = Number(newIdea.numWeeks);
-    addToDatabase('ideas', newIdea);
-    res.status(201).send(newIdea);
+    if (!checkMillionDollarIdea(newIdea)) {
+        res.status(400).send('This idea is not a million dollar idea');
+    } else {
+        addToDatabase('ideas', newIdea);
+        res.status(201).send(newIdea);
+    }
 });
 
 apiRouter.get('/ideas/:id', (req, res, next) => {
@@ -99,6 +112,8 @@ apiRouter.get('/ideas/:id', (req, res, next) => {
 apiRouter.put('/ideas/:id', (req, res, next) => {
     if (req.params.id.toString() !== req.body.id.toString()) {
         res.status(400).send('The id of this minion cannot be changed.');
+    } else if (!checkMillionDollarIdea(req.body)) {
+        res.status(400).send('This idea is not a million dollar idea');
     } else {
         let idea = updateInstanceInDatabase('ideas', req.body);
         if (!idea) {
